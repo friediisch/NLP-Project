@@ -2,11 +2,10 @@ import codecs
 import bs4
 import os
 
-os.chdir('/Users/Friedi/OneDrive - bwedu/Unidokumente/Extraktion von Fachwortschatz aus Fachtexten')
 years = [2010, 2012, 2014, 2016, 2018]
 keyworddict = {}
 for year in years:
-    summarydir = 'LREC/LREC' + str(year) + '_Proceedings/summaries/'
+    summarydir = 'data/LREC/LREC' + str(year) + '_Proceedings/summaries/'
     os.chdir(summarydir)
     print('searching ' + str(summarydir))
     for summary in os.listdir():
@@ -22,4 +21,11 @@ for year in years:
         if title in keyworddict.keys():
             print('Doubly assigned title: ' + title)
         keyworddict[title] = keywords
-    os.chdir('../../..')
+    os.chdir('../../../..')
+    
+
+allkeywords = []
+for keywordlist in keyworddict:
+    for keyword in keywordlist.split(' '):
+        allkeywords.append(keyword)
+allkeywords = list(set(allkeywords))
