@@ -36,7 +36,7 @@ def download_file(download_url, name):
     file.close()
 
 def get_pdf(links, baseURL=None):
-    
+    count = 0
         
     pdf_papers = []
     for link in links:
@@ -48,14 +48,14 @@ def get_pdf(links, baseURL=None):
         tags = soup.findAll('a', href = re.compile(pattern))
         
         for tag in tags:
-            
+            count += 1
             print(baseURL.replace('.html', '/') + tag.attrs['href'])
             pdf_papers.append(baseURL + tag.attrs['href'])
             download_file(baseURL.replace('.html', '/') + tag.attrs['href'], tag.attrs['href'].replace('/', ''))
-    return pdf_papers
+    return pdf_papers, count
   
 
-pdfs = get_pdf(links)
+pdfs, count1 = get_pdf(links)
 
 
 
@@ -67,5 +67,7 @@ links = []
 for ending in endings:
     link = url + ending + '.html'
     links.append(link)
-pdfs = get_pdf(links, url)
+pdfs, count2 = get_pdf(links, url)
 
+
+print('number of pdf files: ', count1, count2, count1 + count2)
