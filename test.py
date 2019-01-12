@@ -9,36 +9,36 @@ import glob
 path = ".\\data\LREC\\"
 
 
-# for year in [2010, 2012, 2014, 2018]:
-#     tmp_path = path + 'LREC{}_Proceedings'.format(year)
+for year in [2010, 2012, 2014, 2018]:
+    tmp_path = path + 'LREC{}_Proceedings'.format(year)
 
 
-#     pdf_files = glob.glob("/home/adam/*.txt")
+    pdf_files = glob.glob("/home/adam/*.txt")
 
 
-# path = ".\\data\LREC\\LREC2016_Proceedings\\summaries\\19.html"
+path = ".\\data\LREC\\LREC2016_Proceedings\\summaries\\19.html"
 
-# html = open(path, 'r').read()
-# soup = BeautifulSoup(html, , 'html.parser')
+html = open(path, 'r').read()
+soup = BeautifulSoup(html, , 'html.parser')
 
-# soup.find('a', href=)
-
-
-
-# data = {
-# 'author': 'Philip Kurzendörfer',
-# 'year' : 2019,
-# 'number' : 10,
-# 'title':'dies ist ein sehr sinnloser titel',
-# 'abstract': 'Alles was gut ist',
-# 'topics': ['topic1', 'topic 2', 'topic 3'],
-# 'keywords': ['kw1', 'kw2', 'kw3'],
-# 'fulltext': 'dies ist ein sehr kurzer beispiel text ohne nennenswerten inhalt oder sinn sondern einfach sinnlos aneinandergekettete wörter die man problemlos auch ersetzen kann durch andere wörter die dem text mehr sinn geben würden',
-# }
+soup.find('a', href=)
 
 
-# # with open('data.json', 'w') as fp:
-# #     json.dump(data, fp)
+
+data = {
+'author': 'Philip Kurzendörfer',
+'year' : 2019,
+'number' : 10,
+'title':'dies ist ein sehr sinnloser titel',
+'abstract': 'Alles was gut ist',
+'topics': ['topic1', 'topic 2', 'topic 3'],
+'keywords': ['kw1', 'kw2', 'kw3'],
+'fulltext': 'dies ist ein sehr kurzer beispiel text ohne nennenswerten inhalt oder sinn sondern einfach sinnlos aneinandergekettete wörter die man problemlos auch ersetzen kann durch andere wörter die dem text mehr sinn geben würden',
+}
+
+
+with open('data.json', 'w') as fp:
+    json.dump(data, fp)
 
 
 
