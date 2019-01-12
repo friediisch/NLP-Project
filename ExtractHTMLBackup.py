@@ -1,33 +1,30 @@
 import codecs
 import bs4
+import PyPDF2
 import os
-import mine_pdf
-from pathlib import Path
-import json
 
 years = [2010, 2012, 2014, 2016, 2018]
-years = [2018]
+# years = [2012]
 datalist = []
 for year in years:
     LRECdir = 'data/LREC/LREC' + str(year) + '_Proceedings/'
     print('searching ' + str(LRECdir))
-    #for html in os.listdir(LRECdir + 'summaries/')[:10]:
-    for html in ['157.html']:
+    for summary in os.listdir(LRECdir + 'summaries/'):
         
         data = {}
         
         # open file
-        f=codecs.open(Path(str(LRECdir + 'summaries/') + str(html)), 'r')
+        f=codecs.open(str(LRECdir + 'summaries/') + str(summary), 'r')
         try:
             soup = bs4.BeautifulSoup(f, 'html.parser')
         except:
-            print(html + ' not included')
+            print(summary + ' not included')
         
         # get year
         data['year'] = year
         
         # get number
-        data['number'] = html.strip('.html')
+        data['number'] = summary.strip('.html')
         
         # extract title
         title = soup.find('th', class_="second_summaries").string
@@ -54,23 +51,18 @@ for year in years:
         else:
             pdfdir = LRECdir + 'pdf/' + str(data['number']) + '_Paper.pdf'
         
-        text, keywords = mine_pdf.mine_pdf(pdfdir)
-
-
-        if text is not None and keywords is not None:
-            if keywords != '':
-                keywords = keywords.lowercase().replace(':', ' ').strip('keywords').split(',')
-            data['keywords'] = keywords
-            data['fulltext'] = text
-
-            print(text)
-
-            with open(Path('data/LRECjson/' + str(year) + '_' + str(data['number']) + '.json'), 'w') as fp:
-                json.dump(data, fp)
+        pdfFileObj = open(pdfdir, 'rb')
+        pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+        num_pages = pdfReader.numPages
+        text = ""
+        for page_index in range(num_pages):
+            pageObj = pdfReader.getPage(page_index)
+            text += pageObj.extractText()
+        data['fulltext'] = text
+            
         
 
-
-
+        
         
     
 
