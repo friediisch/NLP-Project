@@ -63,14 +63,14 @@ def mine_pdf(fp):
         lines = retstr.getvalue().splitlines()
         #for line in lines:
         #    line = handle_line(line)
-            
+
         text = ""
         recording = False
         got_keywords = False
         for i in range(len(lines)):
             lines[i] = lines[i].lower()
             
-            if lines[i].startswith('Keywords'):
+            if lines[i].startswith('keywords'):
                 got_keywords = True
                 keywords = lines[i]
                 
@@ -108,10 +108,10 @@ def mine_pdf(fp):
                 if lines[i-1] == '' and lines[i+1] == '':
                     break
 
-            # if text has no keywords, forgett it        
-            if got_keywords == False:
-                text = None
-                keywords = None
+        # if text has no keywords, forgett it        
+        if got_keywords == False:
+            text = None
+            keywords = None
 
         
     return text, keywords

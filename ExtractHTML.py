@@ -4,6 +4,8 @@ import os
 import mine_pdf
 from pathlib import Path
 import json
+from html.parser import HTMLParser
+from html import unescape
 
 years = [2010, 2012, 2014, 2016, 2018]
 years = [2018]
@@ -11,17 +13,22 @@ datalist = []
 for year in years:
     LRECdir = 'data/LREC/LREC' + str(year) + '_Proceedings/'
     print('searching ' + str(LRECdir))
-    #for html in os.listdir(LRECdir + 'summaries/')[:10]:
-    for html in ['157.html']:
+    for html in os.listdir(LRECdir + 'summaries/'):
+    #for html in ['15.html']:
         
         data = {}
         
         # open file
-        f=codecs.open(Path(str(LRECdir + 'summaries/') + str(html)), 'r')
+        f=codecs.open(Path(str(LRECdir + 'summaries/') + str(html)), 'r',encoding='utf8')
+        #h = HTMLParser()
+        html_content = unescape(f.read())
+        #print(html_content)
         try:
-            soup = bs4.BeautifulSoup(f, 'html.parser')
+            soup = bs4.BeautifulSoup(html_content, 'html.parser')
         except:
             print(html + ' not included')
+            continue
+        
         
         # get year
         data['year'] = year
@@ -59,11 +66,11 @@ for year in years:
 
         if text is not None and keywords is not None:
             if keywords != '':
-                keywords = keywords.lowercase().replace(':', ' ').strip('keywords').split(',')
+                keywords = keywords.lower().replace(':', ' ').strip('keywords').split(',')
             data['keywords'] = keywords
             data['fulltext'] = text
 
-            print(text)
+            #print(text)
 
             with open(Path('data/LRECjson/' + str(year) + '_' + str(data['number']) + '.json'), 'w') as fp:
                 json.dump(data, fp)
