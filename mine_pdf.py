@@ -98,15 +98,19 @@ def mine_pdf(fp):
             else:
                 lines[i] = lines[i] + ' ' 
 
-            if  got_keywords == True:
-                recording = True 
 
-            if recording == True:
-                text += lines[i]
 
             if recording and 'reference' in lines[i] or 'bibliography' in lines[i]:
                 if lines[i-1] == '' and lines[i+1] == '':
                     break
+                    
+            if recording == True:
+                text += lines[i]
+
+            if  got_keywords == True:
+                recording = True 
+
+
 
         # if text has no keywords, forgett it        
         if got_keywords == False:

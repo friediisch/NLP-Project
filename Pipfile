@@ -9,6 +9,7 @@ gensim = "*"
 pandas = "*"
 scikit-learn = "*"
 "beautifulsoup4" = "*"
+nltk = "*"
 
 [dev-packages]
 
