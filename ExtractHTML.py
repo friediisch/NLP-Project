@@ -7,15 +7,14 @@ import json
 from html.parser import HTMLParser
 from html import unescape
 
-years = [2010, 2012, 2014, 2016, 2018]
+years = [2012, 2014, 2016, 2018]
 years = [2018]
 datalist = []
 for year in years:
     LRECdir = 'data/LREC/LREC' + str(year) + '_Proceedings/'
     print('searching ' + str(LRECdir))
     for html in os.listdir(LRECdir + 'summaries/'):
-    #for html in ['15.html']:
-        
+        # try:
         data = {}
         
         # open file
@@ -35,7 +34,11 @@ for year in years:
         
         # get number
         data['number'] = html.strip('.html')
-        
+
+        # checks if corresponding json file is present and exits loop otherwise
+        if str(str(year) + '_' + str(data['number']) + '.json') in os.listdir('data/LRECjson/'):
+            continue
+
         # extract title
         title = soup.find('th', class_="second_summaries").string
         data['title'] = title
@@ -61,8 +64,11 @@ for year in years:
         else:
             pdfdir = LRECdir + 'pdf/' + str(data['number']) + '_Paper.pdf'
         
-        text, keywords = mine_pdf.mine_pdf(pdfdir)
-
+        try:
+            text, keywords = mine_pdf.mine_pdf(pdfdir)
+        except Exception as e:
+            print(e)
+            continue
 
         if text is not None and keywords is not None:
             if keywords != '':
@@ -74,15 +80,6 @@ for year in years:
 
             with open(Path('data/LRECjson/' + str(year) + '_' + str(data['number']) + '.json'), 'w') as fp:
                 json.dump(data, fp)
-        
-
-
-
-        
-    
-
-#alltopics = []
-#for topiclist in topicsdict:
-#    for topic in topiclist.split(' '):
-#        alltopics.append(topic)
-#alltopics = list(set(alltopics))
+        # except Exception as e:
+        #     print(e)
+        #     print(html)
