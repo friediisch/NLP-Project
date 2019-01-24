@@ -12,22 +12,12 @@ from keras.preprocessing.text import one_hot
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.layers import Flatten, Add
+from keras.layers import Flatten
 from keras.layers.embeddings import Embedding
-import keras.backend as K
-from keras.layers import Lambda
-from time import time
-import gensim
-import sys
-from gensim.corpora import Dictionary
-from gensim.models import TfidfModel
-from collections import Counter
 
 
 nlp = sp.load('en_core_web_lg')
-print(nlp.tokenizer)
-print(dir(nlp.tokenizer))
-#nlp.tokenizer.token_match = None
+
 
 with open('stopwords.txt', 'r', encoding='utf-8') as f:
     STOPWORDS = f.readlines()
@@ -47,18 +37,83 @@ replace_dict = {
     'ﬁ': 'fi',
 }
 
+s = 'hahaha\ufb01hhaha\ufb01blabla\ufb01blabal'
+s = s.replace('\ufb01', 'fi')
+print(s)
+# sys.exit(0)
+#fulldoc = ''
+
+# fp = 'data/LRECjson/'
+# for jsonfile in os.listdir(Path(fp))[:1]:
+
+#     with open(Path(str(fp + jsonfile)), 'r') as f:
+#         tmp = json.loads(f.read())
+#         text = tmp['fulltext']
+
+#         # let the preprocessing begin
+
+#         # replace encoded characters
+#         for code, value in replace_dict.items():
+#             text = text.replace(code, value)
+        
+#         # delete stopwords
+
+        
+
+#         doc = nlp(text)
+#         for token in doc:
+#             if not nlp.vocab[token.text.lower()].is_oov:
+#                 # print(token.text.lower())
+#                 # print(nlp.vocab[token.text.lower()].text.lower())
+#                 # print(nlp.vocab[token.text.lower()].has_vector)
+#                 # print(token.text.lower(), token.idx, token.lemma_, token.pos_, token.shape_, token.tag_)
+#             else:
+#                 pass
+#                 #print(token.text.lower())
 
 
 
-data = [] # [{'ngram':'some text', 'label':1, 
-          #   vector:np.array(dx1), vecotrs:np.array(nxd), count: 343, counts:[counts], tfidf:[scores}, 
-          # abstract_count:, title_count, document_id: id, document_vector: np.array()}]
+
+def is_head_of_chunk(token):
+    if not token.is_stop:
+        if not token.is_punct:
+            if token.shape_ > 1:
+                if not token.is_digit:
+                    if not token.is_currency:
+                        if not token.like_url:
+                            if not token.like_num:
+                                if not token.like_email:
+                                    return True
+    return False
 
 
-# tfidf model
-dct = Dictionary.load("../data/models/tfidf/dictionary.model")
-tfidf = TfidfModel.load("../data/models/tfidf/dictionary.model")
+def get_chunks(doc):
+    i = 0
+    while i < len(doc):
+        c = 1
+        while True:
+            if is_head_of_chunk(doc[i+c-1]):
+                c += 1
+            else:
+                break
+        chunk = doc[i:i+c]
+        i += c
+        yield chunk
 
+
+def grams(doc, n):
+    for chunk in get_chunks(doc):
+        for k in range(1, n+1):
+            for i in range(len(chunk)):
+                yield chunk[i: i+k]
+
+
+
+
+
+
+def get_term_length(term):
+    return len(term)
 
 
 def clean_chunk(chunk):
@@ -119,64 +174,32 @@ features_not_kw = []
 y_not_kw = [] # label, keyword yes no
 
 fp = '../data/LRECjson/'
-doc_count = 0
-#for jsonfile in os.listdir(Path(fp))[:100]:
-for jsonfile in ['../data/LRECjson/2018_1049.json']:
-    doc_id = doc_count
-    doc_count += 1
+for jsonfile in os.listdir(Path(fp))[:2]:
     print(jsonfile)
-    #with open(Path(str(fp + jsonfile)), 'r') as f:
-    with open(Path(str(jsonfile)), 'r') as f:
+    with open(Path(str(fp + jsonfile)), 'r') as f:
         tmp = json.loads(f.read())
         text = tmp['fulltext']
-        keywords = tmp['keywords'] + tmp['topics']
+        keywords = tmp['keywords']
         abstract = tmp['abstract']
         title = tmp['title']
         print(keywords) #  ['  blog as corpus', ' blogset-br', ' brazilian portuguese corpu']
         # let the preprocessing begin
-    	
+
         # replace encoded characters
         for code, value in replace_dict.items():
-            print('replacing broken unicode')
             text = text.replace(code, value).lower().strip()
             keywords = [kw.replace(code, value).lower().strip() for kw in keywords]
             abstract = abstract.replace(code, value).lower().strip()
             title = title.replace(code, value).lower().strip()
         
         if keywords is None or len(keywords) == 0:
-            print('skipping...')
             continue
 
         # create spacy document
-        
-        
         text_ = nlp(text)
-        print('text is now a spacy object!')
         keywords_ = [nlp(kw.lower().strip()) for kw in keywords]
-        print('keywords are now list of spacy object!')
         abstract_ = nlp(abstract)
         title_ = nlp(title)
-        print('abstract and title are spacy objects')
-
-        
-        __text__ = [token.lemma_ for token in text_ if not token.is_stop and token.shape > 2 and not token.is_currency and not token.is_punct and not token.is_digit]
-        __title__ = [token.lemma_ for token in title_ if not token.is_stop and token.shape > 2 and not token.is_currency and not token.is_punct and not token.is_digit]
-        __abstract__ = [token.lemma_ for token in abstract_ if not token.is_stop and token.shape > 2 and not token.is_currency and not token.is_punct and not token.is_digit]
-
-        bow = dct.doc2bow(process_document(__title__ + __abstract__ + __text__))
-        scores = tfidf[bow]  # [(tokenid , tfidf_score), (), ...]
-        [(dct[index], weight) for index, weight in weights]
-        print(dictionary.id2token)
-        print(dictionary[0])
-
-        lemma_dict = {'text': ' '.join(__text__), 'title': ' '.join(__title__), 'abstract': ' '.join(__abstract__)}
-
-        # get document vector:
-
-        title_vec = title_.vector
-        abstract_vec = abstract_.vector
-        text_vec = text.vector
-
 
         candidate_set = set()
         for body in [title_, abstract_, text_]:
@@ -185,22 +208,20 @@ for jsonfile in ['../data/LRECjson/2018_1049.json']:
                 if len(chunk) > 0:
                     if chunk.text.lower() not in candidate_set:
                         candidate_set.add(chunk.text.lower().strip())
-                        candidate_dict = {}
                         # check if candidate is a keyword:
                         for keyword in keywords_:
                             #print(chunk.text.lower(), '\t',  keyword.text.lower())
-                            if keyword.text.lower().strip() == chunk.text.lower().strip() or editdistance.eval(chunk.text.lower().strip(), keyword.text.lower().strip()) <= 1 + max(1, np.floor(np.log(len(keyword.text.lower().strip())))):
+                            if keyword.text.lower().strip() == chunk.text.lower().strip() or editdistance.eval(chunk.text.lower().strip(), keyword.text.lower().strip()) <= 1 + max(1, np.floor(np.log(get_term_length(keyword.text.lower().strip())))):
                                 label = 1
 
                                 print('checking keywords: ', chunk.text.lower().strip(), keyword.text.lower().strip(), 'edit distance: ', editdistance.eval(chunk.text.lower().strip(), keyword.text.lower().strip()))
                                 candidates_kw.append(chunk.text.lower().strip())
                                 y_kw.append(label)
-                                break
-                        else: 
-                            #print(chunk.text.lower(), '\t',  keyword.text.lower())
-                            label = 0
-                            candidates_not_kw.append(chunk.text.lower().strip())
-                            y_not_kw.append(label)
+                            else: 
+                                #print(chunk.text.lower(), '\t',  keyword.text.lower())
+                                label = 0
+                                candidates_not_kw.append(chunk.text.lower().strip())
+                                y_not_kw.append(label)
 
                             # extract features
                             # todo
@@ -209,55 +230,6 @@ for jsonfile in ['../data/LRECjson/2018_1049.json']:
                             # die anzahl variationen von einem speziellen term kommen im text vor? (permormance?)
                             # doc2vec: ähnlichkeit term zu dokument
                             # zips law
-                            # [{'ngram':'some text', 'label':1, 
-                            #   vector:np.array(dx1), vecotrs:np.array(nxd), count: 343, counts:[counts], tfidf:[scores}, 
-                            # abstract_count:, title_count, document_id: id, document_vector: np.array()}]
-                        
-                       candidate_dict['filename'] = jsonfile
-                       candidate_dict['doc_id'] = doc_id
-
-                        candidate_dict['ngram'] = chunk.text.lower().strip()
-                        candidate_dict['label'] = label
-
-                        # chunk vectors
-                        candidate_dict['chunk_vec'] = list(chunk.vector)
-                        candidate_dict['word_vecs'] = [list(token.vector) for token in chunk]
-                        chunk_lemma = chunk.lemma_ # lemmatized chunk (eg my --> -PRON-)
-
-                        # document vectors
-                        candidate_dict['title_vec'] = title_vec
-                        candidate_dict['abstract_vec'] = abstract_vec
-                        candidate_dict['text_vec'] = text_vec
-
-                        title_counter = Counter(__title__)
-                        abstract_counter = Counter(__abstract__)
-                        text_counter = Counter(__text__)
-                        # single word counts
-                        candidate_dict['abstract_counts'] = [abstract_counter[token] for token in chunk_lemma]
-                        candidate_dict['text_counts'] = [text_counter[token] for token in chunk_lemma]
-                        candidate_dict['title_counts'] = [title_counter[token] for token in chunk_lemma]
-
-                        # ngram count:
-                        for section_name, section in lemma_dict.items()
-                            candidate_dict[section_name + '_ngram_count'] = ngram_section.count(chunk_lemma)
-
-                        
-
-                        
-                        
-# bow = dictionary.doc2bow(process_document(new_doc))
-
-# weights = tfidf[bow] # [(tokenid , score), (), ...]
-# print(weights)
-# print(dictionary.id2token)
-# print(dictionary[0])
-
-# kw = sorted([(dictionary[index], weight) for index, weight in weights], key=operator.itemgetter(1))
-
-# print(kw)                 
-
-
-
 
 
 # clean candidates, such that i contains 4 non-keywords for each keyword: 
@@ -294,8 +266,7 @@ labels = np.array(y)
 
 print(vocab_size)
 encoded_candidates = [one_hot(c, vocab_size) for c in candidates]
-print(encoded_candidates)
-input('press enter')
+#print(encoded_candidates)
 #print(encoded_candidates)
 # pad documents to a max length of 4 words
 
@@ -305,7 +276,7 @@ padded_docs = pad_sequences(encoded_candidates, maxlen=max_length, padding='post
 # define the model
 model = Sequential()
 model.add(Embedding(vocab_size, 10, input_length=max_length))
-model.add(Lambda(lambda x: K.mean(x, axis=1), output_shape=(10,)))
+model.add(Flatten())
 model.add(Dense(5, activation='sigmoid'))
 model.add(Dense(1, activation='sigmoid'))
 # compile the model
@@ -322,7 +293,7 @@ print('Accuracy: %f' % (accuracy*100))
 
 
 input('press enter')
-#predictions = model.predict(padded_docs)
+predictions = model.predict(padded_candidates)
 #print(predictions)
 
 
