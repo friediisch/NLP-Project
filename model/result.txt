@@ -1,0 +1,93 @@
+this paper
+we
+the Japanese-English Subtitle Corpus
+JESC
+JESC
+a large Japanese-English parallel corpus
+the
+underrepresented domain
+conversational dialogue
+It
+more than 3.2 million examples
+it
+its kind
+The corpus
+subtitles
+the web
+The assembly process
+a number
+novel preprocessing elements
+high monolingual ?uency
+accurate bilingual alignments
+We
+its
+contents
+its quality
+human experts
+baseline machine translation
+(MT) systems
+[[0.02884996]
+ [0.00936033]
+ [0.76475096]
+ [0.5922119 ]
+ [0.5922119 ]
+ [0.73917747]
+ [0.06258684]
+ [0.937158  ]
+ [0.6399364 ]
+ [0.0147319 ]
+ [0.6399364 ]
+ [0.51678383]
+ [0.7448189 ]
+ [0.73009753]
+ [0.88607496]
+ [0.31244585]
+ [0.34169343]
+ [0.18891416]
+ [0.43762067]
+ [0.8988985 ]
+ [0.00936033]
+ [0.21738665]
+ [0.04110738]
+ [0.00927202]
+ [0.66588706]
+ [0.15176646]]
+
+
+
+
+
+
+
+
+
+
+
+ this paper [0.]
+we [0.]
+the Japanese-English Subtitle Corpus [1.2337352e-12]
+JESC [0.62263113]
+JESC [0.62263113]
+a large Japanese-English parallel corpus [0.]
+the
+underrepresented domain [0.]
+conversational dialogue [0.]
+It [0.]
+more than 3.2 million examples [0.]
+it [0.]
+its kind [0.]
+The corpus [1.]
+subtitles [4.8998167e-10]
+the web [1.]
+The assembly process [0.]
+a number [0.]
+novel preprocessing elements [0.]
+high monolingual ?uency [1.]
+accurate bilingual alignments [0.]
+We [0.]
+its
+contents [0.]
+its quality [0.]
+human experts [0.]
+baseline machine translation [0.]
+(MT) systems [0.]
