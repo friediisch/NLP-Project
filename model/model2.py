@@ -38,7 +38,7 @@ with open(Path('../data/models/features/data.json'), 'r') as f:
     datalist = json.loads(f.read()) # dictionary:
 
 
-data, labels, ngrams = utils.create_features(datalist)
+fulldata, labels, ngrams = utils.create_features(datalist)
 
 
 positive_examples = sum(labels)
@@ -55,13 +55,13 @@ pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
 idx = np.hstack((pos_idx, neg_idx))
 
 labels = labels[idx]
-fulldata = data[idx]
+fulldata = fulldata[idx]
 ngrams = ngrams[idx]
 
-data = fulldata[:,:300]
+data1 = fulldata[:,:300]
 
 # split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1)
+xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data1, labels, ngrams, test_size=0.1)
 
 
 # define the model
@@ -113,11 +113,14 @@ model.save('../data/models/keras/model1_2.h5')
 
 
 
-one_dim_embedding = model.predict(data).reshape(-1, 1) # n,1
-data = fulldata[:,300:]  # n x 46
-data[:,  -1] = one_dim_embedding
+one_dim_embedding = model.predict(data1).reshape(-1, 1) # n,1
+data2 = fulldata[:,300:]  # n x 46
+print(data2.shape)
+print(one_dim_embedding.shape)
+#data2[:, -1] = one_dim_embedding
+data2 = np.append(data2, one_dim_embedding, axis=1)
 # split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1)
+xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data2, labels, ngrams, test_size=0.1)
 
 
 
