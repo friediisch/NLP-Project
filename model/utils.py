@@ -74,7 +74,7 @@ def clean_chunk(chunk):
 
 
 def clean_topics(topics):
-    topics = [topic.split('(')[0].strip() for topic in topics]
+    topics = [topic.split('(')[0].strip() for topic in topics if topic is not None]
     return topics
 
 
@@ -100,7 +100,7 @@ def read_document(filepath):
 
         except KeyError as e:
             print(e)
-            return None
+            return None, None, None, None
     return title, abstract, keywords, text
             
 
