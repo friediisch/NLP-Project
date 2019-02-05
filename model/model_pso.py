@@ -1,3 +1,4 @@
+from PSO import myPSO
 import spacy as sp
 import os
 from pathlib import Path
@@ -33,10 +34,14 @@ import pandas as pd
 from keras.layers import Dropout
 from keras import regularizers
 
+
+
+
+
 nlp = sp.load('en_core_web_lg')
 
 
-with open(Path('../data/models/features/data_3.json'), 'r') as f:
+with open(Path('../data/models/features/data_2.json'), 'r') as f:
     datalist = json.loads(f.read()) # dictionary:
 
 
@@ -70,34 +75,106 @@ fulldata = fulldata[idx]
 ngrams = ngrams[idx]
 docvec = docvec[idx]
 
-print(docvec)
+#data1 = fulldata[:,:300] - docvec
 
-data1 = fulldata[:,:300] - docvec
 
-print(data1.shape)
+data1 = fulldata[:,300:] # 11 features
+data1 = data1[:, [3, 7, 8, 9, 10]]
+
 
 # split data:
 xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data1, labels, ngrams, test_size=0.1)
 
 
-# define the model
-model = Sequential()
-model.add(Dense(300, input_dim=300, kernel_regularizer=regularizers.l2(0.01)))
-model.add(Dropout(0.2, input_shape=(300,)))
-model.add(Dense(150, activation='relu', kernel_regularizer=regularizers.l2(0.01)))
-model.add(Dropout(0.1, input_shape=(150,)))
-model.add(Dense(75, activation='relu', kernel_regularizer=regularizers.l2(0.01)))
-model.add(Dropout(0.1, input_shape=(75,)))
-model.add(Dense(10, activation='relu', kernel_regularizer=regularizers.l2(0.01)))
-model.add(Dropout(0.1, input_shape=(10,)))
-model.add(Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l2(0.01)))
-# compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
 
-model.fit(xtrain, ytrain, epochs=10, verbose=1)
-# evaluate the model
-loss, accuracy = model.evaluate(xtest, ytest, verbose=1)
-print('Accuracy: %f' % (accuracy*100))
+# PSO
+models = {}
+i = 0
+def ann_model(num_layers, layer_dims, reg, dropout ,X, X_test, y, y_test):
+    num_layers = int(num_layers)
+    layer_dims = int(layer_dims)
+
+    model = Sequential()
+    model.add(Dense(X.shape[1], input_dim=X.shape[1], kernel_regularizer=regularizers.l2(reg)))
+    model.add(Dropout(dropout, input_shape=(X.shape[1],)))
+
+    for _ in range(num_layers-1):
+        model.add(Dense(layer_dims, activation='relu', kernel_regularizer=regularizers.l2(reg)))
+        model.add(Dropout(dropout, input_shape=(layer_dims,)))
+        
+
+    model.add(Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l2(reg)))
+
+    # compile the model
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
+
+    model.fit(X, y, epochs=3, verbose=1)
+
+    score = model.evaluate(X_test, y_test, verbose=1)    
+    #print('Accuracy: %f' % (accuracy*100))
+
+    global i
+    models[str(i)] = {"model" : model, "num_layers" : num_layers, "layer_dims" : layer_dims, "cost" : score[0], "accuracy" : score[1]}
+    i += 1
+
+    print(score)
+    return score[0] # cost
+
+
+
+def costFunction(x):
+    num_layers = int(x[0])
+    layer_dims = int(x[1])
+    reg =x[2]
+    dropout = x[3]
+
+    cost = ann_model(num_layers, layer_dims, reg, dropout, xtrain, xtest, ytrain, ytest)
+    return cost
+
+
+
+
+problem = myPSO.OptimizationProblem(costFunction=costFunction, varNames=["num_layers", "layer_dims", 'regularization', 'dropout'], 
+                                    nVar=4, varMin=[2, 10, 0, 0], varMax=[20, 10, 2, 0.8])
+pso = myPSO.PSO(problem, MaxIter=2, PopSize=3, c1=2, c2=2, w = 2)
+g = pso.optimize()
+
+solution = pso.get_solution()
+print(solution)
+
+layer_dims = int(solution['layer_dims'])
+num_layers = int(solution['num_layers'])
+reg = solution['regularization']
+dropout = solution['dropout']
+
+# get best model:
+modelIndex = None
+for i, model_dict in models.items():
+    if model_dict["cost"] == g["cost"] and model_dict["num_layers"] == num_layers and model_dict["layer_dims"] == layer_dims and model_dict['regularization'] == reg:
+
+        print("solution found")
+        modelIndex = i
+        break
+else:
+    assert False, "An error occurred: No match"
+
+print(models)
+model = models[str(modelIndex)]["model"]
+score = model.evaluate(xtest, ytest)
+print(score)
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
 predictions = model.predict(xtest)
 
@@ -117,10 +194,10 @@ df_ = np.array([ngrams_test.reshape((-1,)),
 
 
 
-df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=False)
+df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'])
 
 
-df.to_csv('../data/models/keras/results_model3.csv', sep=';')
+df.to_csv('../data/models/keras/results_modelPSO.csv', sep=';')
 
 # for i in range(predictions.shape[0]):
 #     print(ngrams_test[i])
@@ -130,9 +207,7 @@ df.to_csv('../data/models/keras/results_model3.csv', sep=';')
 #     print(predictions[i], '\t', predictions[i] > 0.5 , '\t', ytest[i] )
 
 
-model.save('../data/models/keras/model3.h5')
-
-
+model.save('../data/models/keras/modelPSO.h5')
 
 
 

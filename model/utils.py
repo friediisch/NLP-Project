@@ -307,7 +307,7 @@ def cosim(v1, v2):
     return np.dot(v1, v2)/(np.sqrt(np.dot(v1, v1))*np.sqrt(np.dot(v2, v2)))
 
 
-def create_features(data_list, labels=True):
+def create_features_old(data_list, labels=True):
     data = []
     labels = []
     ngrams = []
@@ -379,3 +379,109 @@ def create_features(data_list, labels=True):
     # returning X, y, chunks     
     return np.array(data), np.array(labels), np.array(ngrams)
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# under construction:
+def create_features(data_list, labels=True, featlist=None):
+    data = []
+    if labels:
+        labels_ = []
+    ngrams = []
+    for instance_dict in data_list:
+
+        extract = lambda x: np.fromstring(instance_dict[x].strip('[]'), sep=',')
+
+        # n-gram vector
+        chunk_vec = extract('chunk_vec')
+
+        # document section vectors
+        title_vec    = extract('title_vec')
+        abstract_vec = extract('abstract_vec')
+        text_vec     = extract('text_vec')
+
+        # document lemma counts
+        title_countsum    = sum(np.array(instance_dict['title_counts']))
+        abstract_countsum = sum(np.array(instance_dict['abstract_counts']))
+        text_countsum     = sum(np.array(instance_dict['text_counts']))
+
+         
+        # document n-gram counts
+        title_ngram_count    = np.array(instance_dict['title_ngram_count']).reshape(1, )
+        abstract_ngram_count = np.array(instance_dict['abstract_ngram_count']).reshape(1, )
+        text_ngram_count     = np.array(instance_dict['text_ngram_count']).reshape(1, )
+
+        # n-gram tf-idf score
+        tfidf_sum = sum(extract('tfidf_scores'))
+
+        # number of words in ngram:
+        n_words = len(instance_dict['ngram'].split())
+
+        # cosine similarities
+        title_sim    = np.array(cosim(chunk_vec, title_vec)).reshape(1, )
+        abstract_sim = np.array(cosim(chunk_vec, abstract_vec)).reshape(1, )
+        text_sim     = np.array(cosim(chunk_vec, text_vec)).reshape(1, )
+
+        # stack features
+        features = np.hstack((  chunk_vec,              # [0:300] --> chunk vector
+                                title_countsum,         # 300 --> how often words in ngram appear in title
+                                abstract_countsum,      # 301 --> how often words in ngram appear in abstract
+                                text_countsum,          # 302 --> how often words in ngram appear in text
+                                n_words,                # 303 --> number of words in ngram
+                                title_ngram_count,      # 304 --> how often ngram appears in title
+                                abstract_ngram_count,   # 305 --> how often ngram appears in abstract
+                                text_ngram_count,       # 306 --> how often ngram appears in text
+                                tfidf_sum,              # 307 --> sum of tfidf scores of words in ngram
+                                title_sim,              # 308 --> cosine similarity of ngram and title
+                                abstract_sim,           # 309 --> cosine similarity of ngram and abstract
+                                text_sim                # 310 --> cosine similarity of ngram and text
+                                ))              
+
+       
+        # 
+
+        # append all features to data
+        data.append(features)
+
+        # append label to labels list
+        if labels:
+            labels_.append(int(instance_dict['label']))
+
+        # append ngram to ngram list
+        ngrams.append(instance_dict['ngram'])
+
+    # returning X, y, chunks  
+    if labels:   
+        return np.array(data), np.array(labels_), np.array(ngrams)
+    else:
+        return np.array(data), np.array(ngrams)
+
+
+def accuracy(y, yhat):
+    return sum(y==yhat)/len(y)
+
+def precision(y, yhat):
+    true_positives = sum((y==1) * (yhat==1))
+    pred_positives = sum(yhat==1)
+    return true_positives/pred_positives
+
+def recall(y, yhat):
+    true_positives = sum((y==1) * (yhat==1))
+    false_negatives = sum((yhat==0) * (y==1))
+    return true_positives/(true_positives+false_negatives)
+
+def F_score(y, yhat):
+    rec = recall(y, yhat)
+    pre = precision(y, yhat)
+    return 2*((pre*rec)/(pre+rec))

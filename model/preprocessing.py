@@ -25,6 +25,7 @@ from gensim.models import TfidfModel
 from collections import Counter
 from random import shuffle
 import utils
+from datetime import datetime
 
 
 
@@ -34,6 +35,7 @@ data = []
 fp = '../data/LRECjson/'
 doc_count = 0
 files = os.listdir(Path(fp))
+start = datetime.now()
 shuffle(files)
 for jsonfile in files:
 #for jsonfile in ['../data/LRECjson/2018_1049.json']:
@@ -58,20 +60,26 @@ for jsonfile in files:
 
     negative_ratio = 10
 
-    # sample fix ratio of negative and positive labels
-    neg_idx = [i for i in range(len(labels)) if labels[i] == 0] # indices of negative examples
-    neg_idx = np.random.choice(np.array(neg_idx),
-                                min(positive_examples*negative_ratio, len(neg_idx)), 
-                                replace=False)
+    if positive_examples > 0:
 
-    pos_idx = [i for i in range(len(labels)) if labels[i] == 1] # indices of positive examples
-    pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
+        # sample fix ratio of negative and positive labels
+        neg_idx = [i for i in range(len(labels)) if labels[i] == 0] # indices of negative examples
+        neg_idx = np.random.choice(np.array(neg_idx),
+                                    min(positive_examples*negative_ratio, len(neg_idx)), 
+                                    replace=False)
 
-    idx = np.hstack((pos_idx, neg_idx))
+        pos_idx = [i for i in range(len(labels)) if labels[i] == 1] # indices of positive examples
+        pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
 
-    doc_data = [doc_data[i] for i in idx]
+        idx = np.hstack((pos_idx, neg_idx))
 
-    data += doc_data
+        doc_data = [doc_data[i] for i in idx]
+
+        data += doc_data
+
+        print('Progress: ', str(np.round(doc_count/len(files), 4)), '%')
+        print('ETA: ', str(((datetime.now()-start)/doc_count)*(len(files)-doc_count)))
+
 
 
 #     # write temporary feature file

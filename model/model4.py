@@ -1,3 +1,9 @@
+'''
+Nur tfidf scores
+
+'''
+
+
 import spacy as sp
 import os
 from pathlib import Path
@@ -30,6 +36,8 @@ from datetime import datetime
 from sklearn.model_selection import train_test_split
 import utils
 import pandas as pd
+from keras.layers import Dropout
+from keras import regularizers
 
 nlp = sp.load('en_core_web_lg')
 
@@ -38,12 +46,21 @@ with open(Path('../data/models/features/data_3.json'), 'r') as f:
     datalist = json.loads(f.read()) # dictionary:
 
 
-fulldata, labels, ngrams = utils.create_features(datalist)
+data, labels, ngrams = utils.create_features(datalist) # fulldata[:300] sind die chunk vectors
 
+
+
+# docvec = [(
+#             np.fromstring(instance['title_vec'].strip('[]'), sep=',') +
+#             np.fromstring(instance['abstract_vec'].strip('[]'), sep=',') + 
+#             np.fromstring(instance['text_vec'].strip('[]'), sep=',') 
+#         ) / 3
+#          for instance in datalist]
+# docvec = np.array(docvec)
 
 positive_examples = sum(labels)
 
-negative_ratio = 2
+negative_ratio = 1
 
 # sample equal number of negative and positive labels
 neg_idx = [i for i in range(labels.shape[0]) if labels[i] == 0] # indices of negative examples
@@ -55,26 +72,38 @@ pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
 idx = np.hstack((pos_idx, neg_idx))
 
 labels = labels[idx]
-fulldata = fulldata[idx]
+data = data[idx]
 ngrams = ngrams[idx]
+#docvec = docvec[idx]
 
-data1 = fulldata[:,:300]
+#data1 = fulldata[:,:300] - docvec
+
+data = data[:,300:] # 11 features
+data = data[:, [7]]
+
+print(data.shape)
 
 # split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data1, labels, ngrams, test_size=0.1)
+xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1)
 
 
 # define the model
 model = Sequential()
-model.add(Dense(300, input_dim=300))
-model.add(Dense(150, activation='relu'))
-model.add(Dense(75, activation='relu'))
-model.add(Dense(10, activation='relu'))
+model.add(Dense(1, input_dim=data.shape[1]))
+#model.add(Dropout(0.2, input_shape=(data.shape[1],)))
+
+#model.add(Dense(3, activation='relu'))
+#model.add(Dropout(0.1, input_shape=(8,)))
+
+#model.add(Dense(3, activation='relu'))
+#model.add(Dropout(0.1, input_shape=(5,)))
+
 model.add(Dense(1, activation='sigmoid'))
+
 # compile the model
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
 
-model.fit(xtrain, ytrain, epochs=10, verbose=1)
+model.fit(xtrain, ytrain, epochs=5, verbose=1)
 # evaluate the model
 loss, accuracy = model.evaluate(xtest, ytest, verbose=1)
 print('Accuracy: %f' % (accuracy*100))
@@ -92,72 +121,15 @@ print(predictions.shape)
 
 df_ = np.array([ngrams_test.reshape((-1,)), 
     predictions.reshape((-1,)), 
-    ytest.reshape((-1,))])
+    ytest.reshape((-1,)),
+    np.where(predictions>0.5, 1, 0).reshape((-1,))])
 
 
 
-df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label'])
+df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=False)
 
 
-df.to_csv('../data/models/keras/results_model1_2.csv', sep=';')
-
-# for i in range(predictions.shape[0]):
-#     print(ngrams_test[i])
-
-
-# for i in range(predictions.shape[0]):
-#     print(predictions[i], '\t', predictions[i] > 0.5 , '\t', ytest[i] )
-
-
-model.save('../data/models/keras/model1_2.h5')
-
-
-
-one_dim_embedding = model.predict(data1).reshape(-1, 1) # n,1
-data2 = fulldata[:,300:]  # n x 46
-print(data2.shape)
-print(one_dim_embedding.shape)
-#data2[:, -1] = one_dim_embedding
-data2 = np.append(data2, one_dim_embedding, axis=1)
-# split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data2, labels, ngrams, test_size=0.1)
-
-
-
-
-
-# define the model
-model = Sequential()
-model.add(Dense(60, input_dim=47))
-#model.add(Dense(30, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
-# compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
-
-model.fit(xtrain, ytrain, epochs=20, verbose=1)
-# evaluate the model
-loss, accuracy = model.evaluate(xtest, ytest, verbose=1)
-print('Accuracy: %f' % (accuracy*100))
-
-predictions = model.predict(xtest)
-
-# df_ = np.array([ngrams_test.reshape((-1,1)), 
-#     predictions.reshape((-1,1)), 
-#     ytest.reshape((-1,1)), 
-#     ((predictions > 0.5)*1).reshape((-1,1))])
-
-
-
-df_ = np.array([ngrams_test.reshape((-1,)), 
-    predictions.reshape((-1,)), 
-    ytest.reshape((-1,))])
-
-
-
-df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label'])
-
-
-df.to_csv('../data/models/keras/results_model2_2.csv', sep=';')
+df.to_csv('../data/models/keras/results_model4.csv', sep=';')
 
 # for i in range(predictions.shape[0]):
 #     print(ngrams_test[i])
@@ -167,7 +139,7 @@ df.to_csv('../data/models/keras/results_model2_2.csv', sep=';')
 #     print(predictions[i], '\t', predictions[i] > 0.5 , '\t', ytest[i] )
 
 
-model.save('../data/models/keras/model2_2.h5')
+model.save('../data/models/keras/model4.h5')
 
 
 

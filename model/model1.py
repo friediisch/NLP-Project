@@ -34,7 +34,7 @@ import pandas as pd
 nlp = sp.load('en_core_web_lg')
 
 
-with open(Path('../data/models/features/data.json'), 'r') as f:
+with open(Path('../data/models/features/data_3.json'), 'r') as f:
     datalist = json.loads(f.read()) # dictionary:
 
 
@@ -58,7 +58,7 @@ labels = labels[idx]
 data = data[idx]
 ngrams = ngrams[idx]
 
-data = data[:,:300]
+#data = data[:,:300]
 
 # split data:
 xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1)
@@ -66,8 +66,9 @@ xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data,
 
 # define the model
 model = Sequential()
-model.add(Dense(300, input_dim=300))
-model.add(Dense(150, activation='relu'))
+model.add(Dense(346, input_dim=346))
+model.add(Dense(200, activation='relu'))
+model.add(Dense(125, activation='relu'))
 model.add(Dense(75, activation='relu'))
 model.add(Dense(10, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
