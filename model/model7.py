@@ -63,37 +63,43 @@ docvec = [(
 docvec = np.array(docvec)
 
 
-wv = data[:,:300] - docvec # 11 features
+wv = data[:,:300] - docvec
 tfidf = data[:, 307:308]
 data = np.hstack((wv, tfidf))
 
-
 # split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1)
+res = train_test_split(data, labels, ngrams, wv, tfidf, test_size=0.1)
+xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test, wv_train, wv_test, tfidf_train, tfidf_test = res
 
+#########################################################
+# Model: w2v -d2v
+model1 = load_model('../data/models/keras/model3.h5')
 
+#########################################################
+# Model: tfidf
+model2 = load_model('../data/models/keras/model4.h5')
 
+#########################################################
+# Model: Hybrid
+model3 = load_model('../data/models/keras/model5.h5')
 
+# evaluate the models
+loss1, accuracy1 = model1.evaluate(wv_test, ytest, verbose=1)
+loss2, accuracy2 = model2.evaluate(tfidf_test, ytest, verbose=1)
+loss3, accuracy3 = model3.evaluate(xtest, ytest, verbose=1)
+predictions1 = model1.predict(wv_test)
+predictions2 = model2.predict(tfidf_test)
+predictions3 = model3.predict(xtest)
 
+predictions = [predictions1, predictions2, predictions3]
 
-
-model = load_model('../data/models/keras/model5.h5')
-
-predictions = model.predict(xtest)
-
-
-
-df_ = np.array([ngrams_test.reshape((-1,)), 
-    predictions.reshape((-1,)), 
-    ytest.reshape((-1,)),
-    np.where(predictions>0.5, 1, 0).reshape((-1,))])
-
-
-
-df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=False)
-
-
-df.to_csv('../data/models/keras/results_model5_modified_classbalance.csv', sep=';')
+for m in [1, 2, 3]:
+    df_ = np.array([ngrams_test.reshape((-1,)), 
+        predictions[m].reshape((-1,)), 
+        ytest.reshape((-1,)),
+        np.where(predictions[m]>0.5, 1, 0).reshape((-1,))])
+    df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'])
+    df.to_csv('../data/models/keras/results_model{}_modified_classbalance.csv'.format(m+2), sep=';')
 
 
 
