@@ -42,6 +42,7 @@ import utils
 import pandas as pd
 from keras.layers import Dropout
 from keras import regularizers
+np.random.seed(0)
 
 nlp = sp.load('en_core_web_lg')
 
@@ -62,14 +63,29 @@ docvec = [(
          for instance in datalist]
 docvec = np.array(docvec)
 
-
 wv = data[:,:300] - docvec
 tfidf = data[:, 307:308]
 data = np.hstack((wv, tfidf))
 
-# split data:
-res = train_test_split(data, labels, ngrams, wv, tfidf, test_size=0.1)
+res = train_test_split(data, labels, ngrams, wv, tfidf, test_size=0.1, random_state=0)
 xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test, wv_train, wv_test, tfidf_train, tfidf_test = res
+
+train_idx = utils.balance_class(ytrain, negative_ratio=1)
+test_idx = utils.balance_class(ytest, negative_ratio=None)
+
+xtrain = xtrain[train_idx]
+xtest = xtest[test_idx]
+ytrain = ytrain[train_idx]
+ytest = ytest[test_idx]
+ngrams_train = ngrams_train[train_idx]
+ngrams_test = ngrams_test[test_idx]
+wv_train = wv_train[train_idx]
+wv_test = wv_test[test_idx]
+tfidf_train = tfidf_train[train_idx]
+tfidf_test = tfidf_test[test_idx]
+
+
+
 
 #########################################################
 # Model: w2v -d2v
@@ -93,13 +109,13 @@ predictions3 = model3.predict(xtest)
 
 predictions = [predictions1, predictions2, predictions3]
 
-for m in [1, 2, 3]:
+for m in [0, 1, 2]:
     df_ = np.array([ngrams_test.reshape((-1,)), 
         predictions[m].reshape((-1,)), 
         ytest.reshape((-1,)),
         np.where(predictions[m]>0.5, 1, 0).reshape((-1,))])
-    df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'])
-    df.to_csv('../data/models/keras/results_model{}_modified_classbalance.csv'.format(m+2), sep=';')
+    df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=None)
+    df.to_csv('../data/models/keras/results_model{}_modified_classbalance.csv'.format(m+3), sep=';', index=False)
 
 
 

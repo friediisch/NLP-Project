@@ -32,6 +32,7 @@ import utils
 import pandas as pd
 from keras.layers import Dropout
 from keras import regularizers
+np.random.seed(0)
 
 nlp = sp.load('en_core_web_lg')
 
@@ -52,32 +53,48 @@ docvec = [(
          for instance in datalist]
 docvec = np.array(docvec)
 
-positive_examples = sum(labels)
+data = fulldata[:,:300] - docvec
+xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data, labels, ngrams, test_size=0.1, random_state=0)
 
-negative_ratio = 1
+train_idx = utils.balance_class(ytrain, negative_ratio=1)
+test_idx = utils.balance_class(ytest, negative_ratio=1)
 
-# sample equal number of negative and positive labels
-neg_idx = [i for i in range(labels.shape[0]) if labels[i] == 0] # indices of negative examples
-neg_idx = np.random.choice(np.array(neg_idx), positive_examples*negative_ratio, replace=False)
+xtrain = xtrain[train_idx]
+xtest = xtest[test_idx]
+ytrain = ytrain[train_idx]
+ytest = ytest[test_idx]
+ngrams_train = ngrams_train[train_idx]
+ngrams_test = ngrams_test[test_idx]
 
-pos_idx = [i for i in range(labels.shape[0]) if labels[i] == 1] # indices of positive examples
-pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
 
-idx = np.hstack((pos_idx, neg_idx))
 
-labels = labels[idx]
-fulldata = fulldata[idx]
-ngrams = ngrams[idx]
-docvec = docvec[idx]
 
-print(docvec)
+# positive_examples = sum(labels)
 
-data1 = fulldata[:,:300] - docvec
+# negative_ratio = 1
+# np.random.seed(0)
+# # sample equal number of negative and positive labels
+# neg_idx = [i for i in range(labels.shape[0]) if labels[i] == 0] # indices of negative examples
+# neg_idx = np.random.choice(np.array(neg_idx), positive_examples*negative_ratio, replace=False)
 
-print(data1.shape)
+# pos_idx = [i for i in range(labels.shape[0]) if labels[i] == 1] # indices of positive examples
+# pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
 
-# split data:
-xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data1, labels, ngrams, test_size=0.1)
+# idx = np.hstack((pos_idx, neg_idx))
+
+# labels = labels[idx]
+# fulldata = fulldata[idx]
+# ngrams = ngrams[idx]
+# docvec = docvec[idx]
+
+# print(docvec)
+
+# data1 = fulldata[:,:300] - docvec
+
+# print(data1.shape)
+
+# # split data:
+# xtrain, xtest, ytrain, ytest, ngrams_train, ngrams_test = train_test_split(data1, labels, ngrams, test_size=0.1, random_state=0)
 
 
 # define the model
@@ -94,7 +111,7 @@ model.add(Dense(1, activation='sigmoid', kernel_regularizer=regularizers.l2(0.01
 # compile the model
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
 
-model.fit(xtrain, ytrain, epochs=10, verbose=1)
+model.fit(xtrain, ytrain, epochs=5, verbose=1)
 # evaluate the model
 loss, accuracy = model.evaluate(xtest, ytest, verbose=1)
 print('Accuracy: %f' % (accuracy*100))
@@ -117,10 +134,10 @@ df_ = np.array([ngrams_test.reshape((-1,)),
 
 
 
-df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=False)
+df = pd.DataFrame(df_.T, columns = ['ngram', 'probability', 'label', 'predicted label'], index=None)
 
 
-df.to_csv('../data/models/keras/results_model3.csv', sep=';')
+df.to_csv('../data/models/keras/results_model3.csv', sep=';', index=False)
 
 # for i in range(predictions.shape[0]):
 #     print(ngrams_test[i])

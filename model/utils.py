@@ -7,16 +7,16 @@ import string
 from spacy.lang.en.stop_words import STOP_WORDS
 from spacy.tokens import Span
 import numpy as np 
-import keras
+#import keras
 import editdistance
-from keras.preprocessing.text import one_hot
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Flatten, Add
-from keras.layers.embeddings import Embedding
-import keras.backend as K
-from keras.layers import Lambda
+#from keras.preprocessing.text import one_hot
+#from keras.preprocessing.sequence import pad_sequences
+#from keras.models import Sequential
+#from keras.layers import Dense
+#from keras.layers import Flatten, Add
+#from keras.layers.embeddings import Embedding
+#import keras.backend as K
+#from keras.layers import Lambda
 from time import time
 import gensim
 import sys
@@ -485,3 +485,29 @@ def F_score(y, yhat):
     rec = recall(y, yhat)
     pre = precision(y, yhat)
     return 2*((pre*rec)/(pre+rec))
+
+
+
+
+# returns the indices of the dataset
+def balance_class(labels, negative_ratio=None):
+    np.random.seed(0)
+    
+    positive_examples = sum(labels)
+    # sample equal number of negative and positive labels
+    neg_idx = [i for i in range(labels.shape[0]) if labels[i] == 0] # indices of negative examples
+    if negative_ratio is not None:
+        neg_idx = np.random.choice(np.array(neg_idx), positive_examples*negative_ratio, replace=False)
+    else:
+        neg_idx = np.random.choice(np.array(neg_idx), len(neg_idx), replace=False)
+
+    pos_idx = [i for i in range(labels.shape[0]) if labels[i] == 1] # indices of positive examples
+    if negative_ratio is not None:
+        pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
+    else:
+        pos_idx = np.random.choice(np.array(pos_idx), positive_examples, replace=False)
+
+    idx = np.hstack((pos_idx, neg_idx))
+    # shuffle
+    np.random.shuffle(idx)
+    return idx
